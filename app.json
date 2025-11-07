@@ -4,6 +4,7 @@
     "slug": "hot-mess-nda",
     "version": "1.0.0",
     "orientation": "portrait",
+    "scheme": "hotmess",
     "updates": {
       "fallbackToCacheTimeout": 0
     },

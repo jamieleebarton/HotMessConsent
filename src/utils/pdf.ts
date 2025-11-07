@@ -7,6 +7,13 @@ export async function createAndShareAgreementPDF(opts: {
   body: string;
   signatureA?: string | null; // base64 (no prefix)
   signatureB?: string | null; // base64 (no prefix)
+  nameA?: string;
+  nameB?: string;
+  initialsA?: string;
+  initialsB?: string;
+  envelopeId?: string;
+  documentId?: string;
+  verifyUrl?: string;
 }) {
   const html = renderHtml(opts);
   const { uri } = await Print.printToFileAsync({ html });
@@ -25,16 +32,18 @@ function escapeHtml(text: string) {
     .replace(/\n/g, '<br/>');
 }
 
-function renderHtml({ scenario, body, signatureA, signatureB }: { scenario: string; body: string; signatureA?: string | null; signatureB?: string | null; }) {
+function renderHtml({ scenario, body, signatureA, signatureB, nameA, nameB, initialsA, initialsB, envelopeId, documentId, verifyUrl }: { scenario: string; body: string; signatureA?: string | null; signatureB?: string | null; nameA?: string; nameB?: string; initialsA?: string; initialsB?: string; envelopeId?: string; documentId?: string; verifyUrl?: string; }) {
   const imgA = signatureA ? `<img src="data:image/png;base64,${signatureA}" style="max-width:100%; max-height:100%;"/>` : '';
   const imgB = signatureB ? `<img src="data:image/png;base64,${signatureB}" style="max-width:100%; max-height:100%;"/>` : '';
 
   const issuedAt = new Date();
   const fmt = (d: Date) => d.toLocaleString();
-  const envelopeId = `HM-${randBlock()}-${randBlock()}-${randBlock()}`;
-  const documentId = `DOC-${randBlock()}`;
+  const envId = envelopeId || `HM-${randBlock()}-${randBlock()}-${randBlock()}`;
+  const docId = documentId || `DOC-${randBlock()}`;
   const signerIp = `${rand(11, 223)}.${rand(0, 255)}.${rand(0, 255)}.${rand(0, 255)}`;
   const ua = 'HotMessSign/1.0 (Totally Not DocuSign)';
+  const verify = verifyUrl || `https://hotmess.sign/verify?envelope=${encodeURIComponent(envId)}`;
+  const qr = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(verify)}`;
 
   return `<!DOCTYPE html>
   <html>
@@ -67,7 +76,7 @@ function renderHtml({ scenario, body, signatureA, signatureB }: { scenario: stri
     <body>
       <div class="header">
         <div class="brand">HotMessSign eSignature — Totally Not DocuSign</div>
-        <div class="meta">Envelope ID: ${envelopeId} • Document ID: ${documentId} • Issued: ${escapeHtml(fmt(issuedAt))}</div>
+        <div class="meta">Envelope ID: ${envId} • Document ID: ${docId} • Issued: ${escapeHtml(fmt(issuedAt))}</div>
       </div>
       <div class="doc">
         <div class="stamp">Certified<br/>Hot Mess<br/>Agreement</div>
@@ -86,6 +95,22 @@ function renderHtml({ scenario, body, signatureA, signatureB }: { scenario: stri
             <div class="sig">${imgB}</div>
           </div>
         </div>
+        <div style="display:flex; gap:16px; margin-top:10px; font-size:12px;">
+          <div style="flex:1;">
+            <div><strong>Printed Name (A):</strong> ${escapeHtml(nameA || '')}</div>
+            <div style="margin-top:6px; display:flex; align-items:center; gap:8px;">
+              <span><strong>Initials (A):</strong></span>
+              <div style="border:1px solid #999; width:40px; height:24px; display:flex; align-items:center; justify-content:center;">${escapeHtml(initialsA || '')}</div>
+            </div>
+          </div>
+          <div style="flex:1;">
+            <div><strong>Printed Name (B):</strong> ${escapeHtml(nameB || '')}</div>
+            <div style="margin-top:6px; display:flex; align-items:center; gap:8px;">
+              <span><strong>Initials (B):</strong></span>
+              <div style="border:1px solid #999; width:40px; height:24px; display:flex; align-items:center; justify-content:center;">${escapeHtml(initialsB || '')}</div>
+            </div>
+          </div>
+        </div>
         <div class="footer">Powered by HotMessSign — Watermark: Totally Not Legally Binding</div>
       </div>
       <div class="watermark">Totally Not Legally Binding</div>
@@ -94,11 +119,13 @@ function renderHtml({ scenario, body, signatureA, signatureB }: { scenario: stri
         <div class="title">Certificate of Completion (Parody)</div>
         <div class="subtle">This page mimics an e‑signature certificate for comedic effect only.</div>
         <table style="margin-top: 12px;">
-          <tr><th>Envelope</th><td>${envelopeId}</td></tr>
-          <tr><th>Document</th><td>${documentId}</td></tr>
+          <tr><th>Envelope</th><td>${envId}</td></tr>
+          <tr><th>Document</th><td>${docId}</td></tr>
           <tr><th>Completed</th><td>${escapeHtml(fmt(issuedAt))}</td></tr>
           <tr><th>IP Address</th><td>${signerIp}</td></tr>
           <tr><th>User Agent</th><td>${ua}</td></tr>
+          <tr><th>Names</th><td>Party A: ${escapeHtml(nameA || '—')} • Party B: ${escapeHtml(nameB || '—')}</td></tr>
+          <tr><th>Initials</th><td>A: ${escapeHtml(initialsA || '—')} • B: ${escapeHtml(initialsB || '—')}</td></tr>
         </table>
         <div style="height: 10px"></div>
         <table>
@@ -107,6 +134,13 @@ function renderHtml({ scenario, body, signatureA, signatureB }: { scenario: stri
           <tr><td>Viewed</td><td>${escapeHtml(fmt(new Date(issuedAt.getTime() - 1000 * 60 * 3)))}</td><td>Party A</td><td>Opened on mobile</td></tr>
           <tr><td>Signed</td><td>${escapeHtml(fmt(issuedAt))}</td><td>Party A & Party B</td><td>Both signatures captured</td></tr>
         </table>
+        <div style="display:flex; align-items:center; gap:16px; margin-top:16px;">
+          <img src="${qr}" width="120" height="120"/>
+          <div>
+            <div><strong>Verify (Parody):</strong></div>
+            <div><a href="${verify}">${verify}</a></div>
+          </div>
+        </div>
         <div class="footer">This certificate is fictional. For laughs only.</div>
       </div>
     </body>
