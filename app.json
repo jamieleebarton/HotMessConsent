@@ -1,0 +1,22 @@
+{
+  "expo": {
+    "name": "Hot Mess NDA",
+    "slug": "hot-mess-nda",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "updates": {
+      "fallbackToCacheTimeout": 0
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {},
+    "web": {
+      "bundler": "metro",
+      "favicon": ""
+    }
+  }
+}
