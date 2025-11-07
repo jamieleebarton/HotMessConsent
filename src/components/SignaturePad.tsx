@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import Signature from 'react-native-signature-canvas';
+import Signature, { SignatureViewRef } from 'react-native-signature-canvas';
 
 type Props = {
   label: string;
@@ -10,7 +10,7 @@ type Props = {
 };
 
 export default function SignaturePad({ label, value, onChange, height = 180 }: Props) {
-  const ref = useRef<Signature>(null);
+  const ref = useRef<SignatureViewRef | null>(null);
 
   return (
     <View style={styles.container}>
@@ -51,4 +51,3 @@ const styles = StyleSheet.create({
   saved: { color: '#5fd38d' },
   hint: { color: '#aaa' },
 });
-
